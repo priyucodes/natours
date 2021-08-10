@@ -17,18 +17,29 @@ const signToken = (id) =>
 //   if (err)
 //     return next(new AppError('Something is wrong with token...', 404));
 // }
-const createSendToken = (user, statusCode, res) => {
+const createSendToken = (user, statusCode, req, res) => {
   const token = signToken(user._id);
-  const cookieOptions = {
+  // const cookieOptions = {
+  //   expires: new Date(
+  //     Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+  //   ),
+  //   httpOnly: true,
+  //   secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+  //   // cannot manipulate the cookie in any way in browser. one fix is to create another logout route which overwrites the jwt cookie. secure cookie
+  // };
+
+  // cookieOptions.secure =
+  //   req.secure || req.headers['x-forwarded-proto'] === 'https';
+
+  // if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+  res.cookie('jwt', token, {
     expires: new Date(
       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
     ),
     httpOnly: true,
-    // cannot manipulate the cookie in any way in browser. one fix is to create another logout route which overwrites the jwt cookie. secure cookie
-  };
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
-
-  res.cookie('jwt', token, cookieOptions);
+    secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+  });
 
   // Remove password from output
   user.password = undefined;
@@ -52,7 +63,7 @@ exports.signup = catchAsync(async (req, res, next) => {
 
   await new Email(newUser, url).sendWelcome();
 
-  createSendToken(newUser, 201, res);
+  createSendToken(newUser, 201, req, res);
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -68,7 +79,7 @@ exports.login = catchAsync(async (req, res, next) => {
     return next(new AppError('Incorrect email or password', 401));
   }
   // 3) If everything ok, send token to client
-  createSendToken(user, 200, res);
+  createSendToken(user, 200, req, res);
 });
 
 exports.logout = (req, res) => {
@@ -247,7 +258,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   // 3) Update changedPasswordAt property for the user (Done via pre middleware)
 
   // 4) Log the user in, send JWT
-  createSendToken(user, 200, res);
+  createSendToken(user, 200, req, res);
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
@@ -265,5 +276,5 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   await user.save();
   // User.findByIdAndUpdate will NOT work as intended!!
   // 4) Log user in, send JWT
-  createSendToken(user, 200, res);
+  createSendToken(user, 200, req, res);
 });

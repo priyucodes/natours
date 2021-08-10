@@ -44,3 +44,10 @@ process.on('unhandledRejection', (err) => {
   // 0 -> Success
   // 1 -> Uncaught exception
 });
+
+process.on('SIGTERM', () => {
+  console.log('👋 SIGTERM RECEIVED. Shutting down gracefully');
+  server.close(() => {
+    console.log('🎇 Process terminated!');
+  });
+});
