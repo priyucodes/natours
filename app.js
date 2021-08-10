@@ -8,6 +8,7 @@ const xss = require('xss-clean');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 const compression = require('compression');
+const cors = require('cors');
 
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
@@ -26,6 +27,26 @@ app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
 // 1) GLOBAL MIDDLEWARES
+
+// Implement CORS
+app.use(cors());
+// Access-Control-Allow-Origin *
+// backend at api.natours.com, front-end at natours.com
+// app.use(
+//   cors({
+//     origin: 'https://www.natours.com',
+//   })
+// );
+
+// Another HTTP method, Browser sents us option request when there is a pre flight phase
+app.options('*', cors());
+// app.options('/api/v1/tours/:id', cors());
+
+// GET POST -> Simple Request
+// PATCH PUT DELETE or also request that send cookies or use non-standard headers ->  Non-Simple request
+//  Non-Simple request require preflight phase whenever there is a non simple request, the browser will automatically issue the preflight phase.
+// Before the real req actually happen lets say DELETE req, the browser first do a OPTIONS request in order to figure out if the actual request is safe to send. We need to respond to the OPTIONS request
+
 // Serving static files to browser
 // app.use(express.static(`${__dirname}/public`));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -141,6 +162,9 @@ app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/reviews', reviewRouter);
 app.use('/api/v1/bookings', bookingRouter);
+
+// Implement cors in specific route
+// app.use('/api/v1/tours',cors(),tourRouter)
 
 // Handling Unhandled Routes
 app.all('*', (req, res, next) => {
